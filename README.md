@@ -31,6 +31,14 @@ via Baseten) reviews the attempt and returns a coach-style explanation:
   static review and says so.
 - Per-IP rate limit; returns 503 when `BASETEN_API_KEY` is not configured.
 
+
+## Known model behavior
+
+Muse is a language model and is not perfect: in testing it occasionally echoed
+its answer-format template instead of reviewing the code, and its explanations
+can be wrong. The deterministic grader stays the source of truth; treat the
+review as helpful guidance, not verdict.
+
 ## Running it
 
 These files drop into the BugGym Next.js 16 app (private repo). Set
