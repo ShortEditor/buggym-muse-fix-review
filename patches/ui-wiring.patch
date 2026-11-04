@@ -1,0 +1,88 @@
+diff --git a/app/lab/[slug]/Workspace.tsx b/app/lab/[slug]/Workspace.tsx
+index cd61993..91613a4 100644
+--- a/app/lab/[slug]/Workspace.tsx
++++ b/app/lab/[slug]/Workspace.tsx
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import { useState } from "react";
++import FixReview from "@/components/FixReview";
+ 
+ interface LabFile {
+   path: string;
+@@ -28,6 +29,7 @@ export default function Workspace({ lab }: { lab: Lab }) {
+   const [console_, setConsole] = useState<string>("Press Run to execute the project, or Submit Fix when you think you found the bug.");
+   const [results, setResults] = useState<CheckResult[] | null>(null);
+   const [verdict, setVerdict] = useState<string | null>(null);
++  const [firstError, setFirstError] = useState<string | null>(null);
+   const [busy, setBusy] = useState(false);
+ 
+   const current = lab.files.find((f) => f.path === open);
+@@ -50,6 +52,7 @@ export default function Workspace({ lab }: { lab: Lab }) {
+       } else {
+         setResults(j.results);
+         setVerdict(j.verdict);
++        setFirstError(j.firstError ?? null);
+         setConsole(
+           j.verdict === "accepted"
+             ? "All hidden checks pass. Bug fixed."
+@@ -159,6 +162,24 @@ export default function Workspace({ lab }: { lab: Lab }) {
+               {verdict === "accepted" ? "Accepted - bug fixed" : "Not yet - keep hunting"}
+             </div>
+           )}
++          {verdict && verdict !== "accepted" && (
++            <div className="px-3 pb-1">
++              <FixReview
++                kind="lab"
++                slug={lab.slug}
++                getPayload={() => ({
++                  edits,
++                  grade: {
++                    verdict,
++                    passed: results?.filter((r) => r.passed).length ?? 0,
++                    total: results?.length ?? lab.checks.length,
++                    failed: results?.filter((r) => !r.passed).map((r) => r.name) ?? [],
++                    firstError,
++                  },
++                })}
++              />
++            </div>
++          )}
+           <div className="border-t border-zinc-800 px-3 py-2 text-[11px] font-bold tracking-wider text-zinc-500">CONSOLE</div>
+           <pre className="flex-1 overflow-auto whitespace-pre-wrap px-3 py-2 font-mono text-xs leading-relaxed text-zinc-400">
+             {console_}
+diff --git a/app/problem/[slug]/Solver.tsx b/app/problem/[slug]/Solver.tsx
+index 7ce3414..a770267 100644
+--- a/app/problem/[slug]/Solver.tsx
++++ b/app/problem/[slug]/Solver.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { useEffect, useState } from "react";
+ import Editor from "@monaco-editor/react";
++import FixReview from "@/components/FixReview";
+ 
+ interface TestResult {
+   name: string;
+@@ -187,6 +188,22 @@ export default function Solver({
+                     {resp.firstError}
+                   </pre>
+                 )}
++                {!accepted && (
++                  <FixReview
++                    kind="problem"
++                    slug={slug}
++                    getPayload={() => ({
++                      code,
++                      grade: {
++                        verdict: resp.verdict,
++                        passed: resp.passed,
++                        total: resp.total,
++                        failed: resp.results?.filter((t) => !t.passed).map((t) => t.name) ?? [],
++                        firstError: resp.firstError,
++                      },
++                    })}
++                  />
++                )}
+                 {accepted && (
+                   <p className="mt-2 text-xs text-zinc-500">
+                     Marked as solved on this device.
